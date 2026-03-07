@@ -1,3 +1,4 @@
+# Unity Simeple FPS Controller
 *Hello everyone! This is my simple **FPS Controller template for Unity**. I use it frequently in my projects and wanted to share it. You are free to use it in your projects (commercial and non-commercial) without attribution.*
 
 **I don't claim that this code is correct or clean. I'm not a C# senior.**
