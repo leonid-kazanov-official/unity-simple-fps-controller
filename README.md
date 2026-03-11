@@ -17,5 +17,6 @@
 	- Running forward
 	- Controlling the camera with `Cinemachine`.
 	- Camera shaking when walking/running.
+    - Calculate Stamina. 
 
 *I will be updating this controller in the future, and you can also suggest me updates via [contact information](https://github.com/leonid-kazanov-official).*
