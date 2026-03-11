@@ -1,16 +1,18 @@
+using System;
 using UnityEngine;
 
 public class PlayerMovementController : MonoBehaviour
 {
     #region Variables
-    private CharacterController characterController;
-    private Animator playerAnimator;
-    private InputSystem inputSystem;
-
-    private Vector3 movementInput;
     private bool sprintIsPerformed;
-    public bool isSprinting; //public because can use from stamina class
-    private bool isWalking;
+    public bool IsSprinting { get; private set; }
+    public bool IsWalking { get; private set; }
+
+
+    public bool CanSprint { get; private set; } = true;
+    public void EnableCanSprint() { CanSprint = true; }
+    public void DisableCanSprint() { CanSprint = false; }
+
 
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeedForward = 5f;
@@ -18,10 +20,22 @@ public class PlayerMovementController : MonoBehaviour
     [SerializeField] private float moveSpeedLeft = 4f;
     [SerializeField] private float moveSpeedRight = 4f;
     [SerializeField] private float sprintSpeed = 8f;
-    [SerializeField] private float currentMoveSpeed;
+    
+    private float currentMoveSpeed;
+    public float CurrentMoveSpeed
+    {
+        get { return currentMoveSpeed; }
+        private set { currentMoveSpeed = Math.Clamp(value, 0, float.MaxValue); }
+    }
+
+    private Vector3 movementInput;
 
     [Header("Components")]
     [SerializeField] private GameObject playerCamera;
+    [SerializeField] private CharacterController characterController;
+    [SerializeField] private Animator playerAnimator;
+    [SerializeField] private InputSystem inputSystem;
+    [SerializeField] private PlayerGravity playerGravity;
 
     [Header("Head Bob")]
     public bool enableHeadBob = true;
@@ -35,15 +49,10 @@ public class PlayerMovementController : MonoBehaviour
 
 
 
-
-
     #region Unity Methods
     void Awake()
     {
-        characterController = GetComponent<CharacterController>();
-        playerAnimator = GetComponent<Animator>();
-        if (characterController == null || playerAnimator == null)
-            Debug.LogError("Missing Player Components");
+        GetComponents();
 
         inputSystem = new InputSystem();
         inputSystem.Enable();
@@ -77,7 +86,6 @@ public class PlayerMovementController : MonoBehaviour
 
 
 
-
     #region Read&Check Methods
     void ReadMovementInput()
     {
@@ -86,12 +94,10 @@ public class PlayerMovementController : MonoBehaviour
     }
     void CheckWalking()
     {
-        if (movementInput != Vector3.zero) isWalking = true;
-        else isWalking = false;
+        if (movementInput != Vector3.zero) IsWalking = true;
+        else IsWalking = false;
     }
     #endregion
-
-
 
 
 
@@ -100,7 +106,7 @@ public class PlayerMovementController : MonoBehaviour
     {
         Vector3 move = playerCamera.transform.forward * movementInput.z + playerCamera.transform.right * movementInput.x;
         move.y = 0f;
-        characterController.Move(move.normalized * currentMoveSpeed * Time.deltaTime);
+        characterController.Move(move.normalized * CurrentMoveSpeed * Time.deltaTime);
     }
 
     void PlayerRotation()
@@ -110,25 +116,25 @@ public class PlayerMovementController : MonoBehaviour
 
     void Sprint()
     {
-        bool canSprintForward = sprintIsPerformed && movementInput.z > 0.05f && Mathf.Abs(movementInput.x) < 0.05f;
+        bool canSprintForward = CanSprint == true && sprintIsPerformed && movementInput.z > 0.05f && Mathf.Abs(movementInput.x) < 0.05f;
 
         if (canSprintForward)
         {
-            currentMoveSpeed = sprintSpeed;
+            CurrentMoveSpeed = sprintSpeed;
             playerAnimator.SetBool("FRunning", true);
-            isSprinting = true;
+            IsSprinting = true;
         }
         else
         {
             playerAnimator.SetBool("FRunning", false);
-            isSprinting = false;
+            IsSprinting = false;
         }
     }
     private void HeadBob()
     {
-        if (isWalking)
+        if (IsWalking)
         {
-            if (isSprinting)
+            if (IsSprinting)
             {
                 timer += Time.deltaTime * (bobSpeed + sprintSpeed);
             }
@@ -145,8 +151,6 @@ public class PlayerMovementController : MonoBehaviour
         }
     }
     #endregion
-
-
 
 
 
@@ -172,11 +176,54 @@ public class PlayerMovementController : MonoBehaviour
 
         float threshold = 0.05f;
 
-        if (movementInput.z > threshold) currentMoveSpeed = moveSpeedForward;
-        else if (movementInput.z < -threshold) currentMoveSpeed = moveSpeedBackward;
-        else if (movementInput.x < -threshold) currentMoveSpeed = moveSpeedLeft;
-        else if (movementInput.x > threshold) currentMoveSpeed = moveSpeedRight;
-        else currentMoveSpeed = 0f;
+        if (movementInput.z > threshold) CurrentMoveSpeed = moveSpeedForward;
+        else if (movementInput.z < -threshold) CurrentMoveSpeed = moveSpeedBackward;
+        else if (movementInput.x < -threshold) CurrentMoveSpeed = moveSpeedLeft;
+        else if (movementInput.x > threshold) CurrentMoveSpeed = moveSpeedRight;
+        else CurrentMoveSpeed = 0f;
+    }
+    #endregion
+
+
+
+    #region GetComponents Method
+    void GetComponents()
+    {
+        // Camera
+        if (playerCamera == null)
+        {
+            Debug.LogError("Can't find Camera, please add it in playerCamera field");
+        }
+
+        // Animator
+        if (playerAnimator == null)
+        {
+            playerAnimator = gameObject.GetComponent<Animator>();
+            if (playerAnimator == null)
+            {
+                Debug.LogError("Can't find Animator component, please add it in playerAnimator field");
+            }
+        }
+
+        // Chracter Controller
+        if (characterController == null)
+        {
+            characterController = gameObject.GetComponent<CharacterController>();
+            if (characterController == null)
+            {
+                Debug.LogError("Can't find CharacterController, please add it in characterController field");
+            }
+        }
+
+        //Player Gravity
+        if (playerGravity == null)
+        {
+            playerGravity = gameObject.GetComponent<PlayerGravity>();
+            if (playerGravity == null)
+            {
+                Debug.LogError("Can't find PlayerGravity component, please add it in playerGravity field");
+            }
+        }
     }
     #endregion
 }
